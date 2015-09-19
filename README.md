@@ -11,7 +11,7 @@ You need three things for this to work:
 - Live device ID of your Xbox One (not always needed)
 
 To find the IP of your Xbox, go to Settings -> Network -> Advanced settings.  
-To find your Live console ID, go to Settings -> Device -> Console info.  
+To find your Live console ID, go to Settings -> System -> Console info.  
 NOTE: It's probably a good idea to keep this information a secret!
 
 If you want to use this over the internet, you'll also need port 5050 forwarded to your Xbox One.
