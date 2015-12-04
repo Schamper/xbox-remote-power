@@ -54,7 +54,7 @@ def main():
 
     if py3:
         power_packet = bytes.fromhex(XBOX_POWER)
-        power_packet = power_packet + opts.live_id + b'\x00'
+        power_packet = power_packet + live_id + b'\x00'    
     else:
         power_packet = XBOX_POWER + opts.live_id.encode("hex") + "00"
         power_packet = power_packet.decode("hex")
@@ -65,6 +65,22 @@ def main():
         time.sleep(1)
     print("Xbox should turn on now")
 
+    s.send(bytes.fromhex(XBOX_PING))
+    ready = select.select([s], [], [], 5)
+    if ready[0]:
+        data = s.recv(1024)
+        opts.live_id = data[199:215]
+        print("Ping successful!")
+        print("Live ID = " + live_id.decode("utf-8"))
+        print("")
+        print("******************************************")
+        print("* Xbox running - Streaming now possible! *")
+        print("******************************************")
+        print("")
+    else:
+        print("Failed to ping Xbox - please try again! :(")
+        print("")
+        
     s.close()
 
 def user_input(text):
