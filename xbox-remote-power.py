@@ -48,6 +48,8 @@ def main():
 
     if isinstance(opts.live_id, str):
         live_id = opts.live_id.encode()
+    else:
+        live_id = opts.live_id
 
     power_packet = bytearray.fromhex(XBOX_POWER) + live_id + b'\x00'
     print("Sending power on packets to " + opts.ip_addr)
