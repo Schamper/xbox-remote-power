@@ -36,10 +36,7 @@ def main():
 
     if ping:
         print("Attempting to ping Xbox for Live ID...")
-        if py3:
-            s.send(bytes.fromhex(XBOX_PING))
-        else:
-            s.send(XBOX_PING.decode("hex"))
+        s.send(bytearray.fromhex(XBOX_PING))
 
         ready = select.select([s], [], [], 5)
         if ready[0]:
@@ -52,20 +49,14 @@ def main():
     if isinstance(opts.live_id, str):
         live_id = opts.live_id.encode()
 
-    if py3:
-        power_packet = bytes.fromhex(XBOX_POWER)
-        power_packet = power_packet + live_id + b'\x00'    
-    else:
-        power_packet = XBOX_POWER + opts.live_id.encode("hex") + "00"
-        power_packet = power_packet.decode("hex")
-
+    power_packet = bytearray.fromhex(XBOX_POWER) + live_id + b'\x00'
     print("Sending power on packets to " + opts.ip_addr)
     for i in range(0, 5):
         s.send(power_packet)
         time.sleep(1)
     print("Xbox should turn on now")
 
-    s.send(bytes.fromhex(XBOX_PING))
+    s.send(bytearray.fromhex(XBOX_PING))
     ready = select.select([s], [], [], 5)
     if ready[0]:
         data = s.recv(1024)
