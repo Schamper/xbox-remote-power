@@ -5,9 +5,8 @@ XBOX_PORT = 5050
 XBOX_PING = "dd00000a000000000000000400000002"
 XBOX_POWER = "dd02001300000010"
 
-help_text = "xbox-remote-power.py -a <ip address> -i <live id>"
-
 py3 = sys.version_info[0] > 2
+
 
 def main():
     parser = OptionParser()
@@ -18,33 +17,13 @@ def main():
     if not opts.ip_addr:
         opts.ip_addr = user_input("Enter the IP address: ")
 
-    ping = False
     if not opts.live_id:
-        print("No Live ID given, do you want to attempt to ping the Xbox for it?")
-        result = ""
-        while result not in ("y", "n"):
-            result = user_input("(y/n): ").lower()
-        if result == "y":
-            ping = True
-        elif result == "n":
-            opts.live_id = user_input("Enter the Live ID: ")
+        opts.live_id = user_input("Enter the Live ID: ")
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setblocking(0)
     s.bind(("", 0))
     s.connect((opts.ip_addr, XBOX_PORT))
-
-    if ping:
-        print("Attempting to ping Xbox for Live ID...")
-        s.send(bytearray.fromhex(XBOX_PING))
-
-        ready = select.select([s], [], [], 5)
-        if ready[0]:
-            data = s.recv(1024)
-            opts.live_id = data[199:215]
-        else:
-            print("Failed to ping Xbox, please enter Live ID manually")
-            opts.live_id = user_input("Enter the Live ID: ")
 
     if isinstance(opts.live_id, str):
         live_id = opts.live_id.encode()
@@ -52,29 +31,39 @@ def main():
         live_id = opts.live_id
 
     power_packet = bytearray.fromhex(XBOX_POWER) + live_id + b'\x00'
-    print("Sending power on packets to " + opts.ip_addr)
-    for i in range(0, 5):
-        s.send(power_packet)
-        time.sleep(1)
-    print("Xbox should turn on now")
+    print("Sending power on packets to {0}...".format(opts.ip_addr))
+    send_power(s, power_packet)
 
-    s.send(bytearray.fromhex(XBOX_PING))
-    ready = select.select([s], [], [], 5)
-    if ready[0]:
-        data = s.recv(1024)
-        opts.live_id = data[199:215]
+    print("Xbox should turn on now, pinging to make sure...")
+    ping_result = send_ping(s)
+
+    if ping_result:
         print("Ping successful!")
-        print("Live ID = " + live_id.decode("utf-8"))
-        print("")
-        print("******************************************")
-        print("* Xbox running - Streaming now possible! *")
-        print("******************************************")
-        print("")
     else:
-        print("Failed to ping Xbox - please try again! :(")
-        print("")
-        
+        print("Failed to ping Xbox :( - do you wish to keep trying?")
+        result = ""
+        while result not in ("y", "n"):
+            result = user_input("(y/n): ").lower()
+        if result == "y":
+            print("Sending power packets and pinging until Xbox is on...")
+            while not ping_result:
+                send_power(s, power_packet)
+                ping_result = send_ping(s)
+            print("Ping successful!")
+
     s.close()
+
+
+def send_power(s, data, times=5):
+    for i in range(0, times):
+        s.send(data)
+        time.sleep(1)
+
+
+def send_ping(s):
+    s.send(bytearray.fromhex(XBOX_PING))
+    return select.select([s], [], [], 5)[0]
+
 
 def user_input(text):
     response = ""
