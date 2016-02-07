@@ -1,5 +1,5 @@
 import sys, socket, select, time
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 XBOX_PORT = 5050
 XBOX_PING = "dd00000a000000000000000400000002"
@@ -9,29 +9,30 @@ py3 = sys.version_info[0] > 2
 
 
 def main():
-    parser = OptionParser()
-    parser.add_option('-a', '--address', dest='ip_addr', help="IP Address of Xbox One", default='')
-    parser.add_option('-i', '--id', dest='live_id', help="Live ID of Xbox One", default='')
-    (opts, args) = parser.parse_args()
+    parser = ArgumentParser(description="Send power on packets to a Xbox One.")
+    parser.add_argument('-a', '--address', dest='ip_addr', help="IP Address of Xbox One", default='')
+    parser.add_argument('-i', '--id', dest='live_id', help="Live ID of Xbox One", default='')
+    parser.add_argument('-f', dest='forever', help="Send packets until Xbox is on", action='store_true')
+    args = parser.parse_args()
         
-    if not opts.ip_addr:
-        opts.ip_addr = user_input("Enter the IP address: ")
+    if not args.ip_addr:
+        args.ip_addr = user_input("Enter the IP address: ")
 
-    if not opts.live_id:
-        opts.live_id = user_input("Enter the Live ID: ")
+    if not args.live_id:
+        args.live_id = user_input("Enter the Live ID: ")
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setblocking(0)
     s.bind(("", 0))
-    s.connect((opts.ip_addr, XBOX_PORT))
+    s.connect((args.ip_addr, XBOX_PORT))
 
-    if isinstance(opts.live_id, str):
-        live_id = opts.live_id.encode()
+    if isinstance(args.live_id, str):
+        live_id = args.live_id.encode()
     else:
-        live_id = opts.live_id
+        live_id = args.live_id
 
     power_packet = bytearray.fromhex(XBOX_POWER) + live_id + b'\x00'
-    print("Sending power on packets to {0}...".format(opts.ip_addr))
+    print("Sending power on packets to {0}...".format(args.ip_addr))
     send_power(s, power_packet)
 
     print("Xbox should turn on now, pinging to make sure...")
@@ -40,11 +41,12 @@ def main():
     if ping_result:
         print("Ping successful!")
     else:
-        print("Failed to ping Xbox :( - do you wish to keep trying?")
+        print("Failed to ping Xbox :(")
         result = ""
-        while result not in ("y", "n"):
-            result = user_input("(y/n): ").lower()
-        if result == "y":
+        if not args.forever:
+            while result not in ("y", "n"):
+                result = user_input("Do you wish to keep trying? (y/n): ").lower()
+        if args.forever or result == "y":
             print("Sending power packets and pinging until Xbox is on...")
             while not ping_result:
                 send_power(s, power_packet)
