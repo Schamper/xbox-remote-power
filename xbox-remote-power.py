@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 
 XBOX_PORT = 5050
 XBOX_PING = "dd00000a000000000000000400000002"
-XBOX_POWER = "dd02001300000010"
 
 py3 = sys.version_info[0] > 2
 
@@ -31,7 +30,9 @@ def main():
     else:
         live_id = args.live_id
 
-    power_packet = bytearray.fromhex(XBOX_POWER) + live_id + b'\x00'
+    power_payload = b'\x00' + chr(len(live_id)) + live_id + b'\x00'
+    power_header = b'\xdd\x02\x00' + chr(len(power_payload)) + b'\x00\x00'
+    power_packet = power_header + power_payload
     print("Sending power on packets to {0}...".format(args.ip_addr))
     send_power(s, power_packet)
 
