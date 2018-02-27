@@ -12,6 +12,7 @@ def main():
     parser.add_argument('-a', '--address', dest='ip_addr', help="IP Address of Xbox One", default='')
     parser.add_argument('-i', '--id', dest='live_id', help="Live ID of Xbox One", default='')
     parser.add_argument('-f', dest='forever', help="Send packets until Xbox is on", action='store_true')
+    parser.add_argument('-p', '--pingonly', dest='pingonly', help="Send ping to Xbox One without turning on", action='store_true')
     args = parser.parse_args()
         
     if not args.ip_addr:
@@ -30,13 +31,14 @@ def main():
     else:
         live_id = args.live_id
 
-    power_payload = b'\x00' + chr(len(live_id)).encode() + live_id + b'\x00'
-    power_header = b'\xdd\x02\x00' + chr(len(power_payload)).encode() + b'\x00\x00'
-    power_packet = power_header + power_payload
-    print("Sending power on packets to {0}...".format(args.ip_addr))
-    send_power(s, power_packet)
+    if not args.pingonly:
+        power_payload = b'\x00' + chr(len(live_id)).encode() + live_id + b'\x00'
+        power_header = b'\xdd\x02\x00' + chr(len(power_payload)).encode() + b'\x00\x00'
+        power_packet = power_header + power_payload
+        print("Sending power on packets to {0}...".format(args.ip_addr))
+        send_power(s, power_packet)
 
-    print("Xbox should turn on now, pinging to make sure...")
+        print("Xbox should turn on now, pinging to make sure...")
     ping_result = send_ping(s)
 
     if ping_result:
@@ -44,14 +46,19 @@ def main():
     else:
         print("Failed to ping Xbox :(")
         result = ""
-        if not args.forever:
+        if not args.forever and not args.pingonly:
             while result not in ("y", "n"):
                 result = user_input("Do you wish to keep trying? (y/n): ").lower()
         if args.forever or result == "y":
-            print("Sending power packets and pinging until Xbox is on...")
+            if not args.pingonly:
+                print("Sending power packets and pinging until Xbox is on...")
+            else:
+                print("Sending pinging until Xbox is on...")
             while not ping_result:
-                send_power(s, power_packet)
+                if not args.pingonly:
+                    send_power(s, power_packet)
                 ping_result = send_ping(s)
+                print("Failed to ping Xbox :(")
             print("Ping successful!")
 
     s.close()
