@@ -32,7 +32,7 @@ def main():
         live_id = args.live_id
 
     if not args.pingonly:
-        power_payload = b'\x00' + chr(len(live_id)).encode() + live_id + b'\x00'
+        power_payload = b'\x00' + chr(len(live_id)).encode() + live_id.upper() + b'\x00'
         power_header = b'\xdd\x02\x00' + chr(len(power_payload)).encode() + b'\x00\x00'
         power_packet = power_header + power_payload
         print("Sending power on packets to {0}...".format(args.ip_addr))
