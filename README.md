@@ -1,6 +1,8 @@
 xbox-remote-power
 ======================
 
+**Please go to https://github.com/OpenXbox for continued development of this and much more.**
+
 This is a little script that can turn your Xbox One on remotely. It works over both LAN and WAN, provided you have port 5050 forwarded to your Xbox One.
 
 If you're looking for a complete SmartGlass implementation, take a look at [OpenXbox/xbox-smartglass-core-python](https://github.com/OpenXbox/xbox-smartglass-core-python).
